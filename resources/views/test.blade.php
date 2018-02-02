@@ -2,7 +2,12 @@
 @section('content')
 <div class="container">
     <div class="row">
-            <h1>Test In Progress</h1>
+        <h1>Test In Progress</h1>
+        <ul>        
+            @foreach ($testList as $test)
+            <li>{{ $test->test_name }}</li>
+            @endforeach
+        </ul>
             
     </div>
 </div>

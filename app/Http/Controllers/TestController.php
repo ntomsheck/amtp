@@ -56,8 +56,9 @@ class TestController extends Controller
                 return redirect('/');
         
         $test = \App\DeviceTest::find($testId);
+        $testList = \App\Test::all();
         
-        return view('test', ['testCase' => $test]);
+        return view('test', ['testCase' => $test, 'testList' => $testList]);
         
     }
     
