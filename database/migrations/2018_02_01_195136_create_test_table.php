@@ -19,7 +19,10 @@ class CreateTestTable extends Migration
             $table->string('test_description');
             $table->string('result_type');
             $table->string('minimum_threshold')->default('');
-            $table->string('maximum_threshold')->default('');            
+            $table->string('maximum_threshold')->default('');
+            $table->string('order');
+            $table->tinyInteger('continue_port_on_failure')->default(1);
+            $table->tinyInteger('continue_unit_on_failure')->default(1);
             $table->timestamps();
         });
     }

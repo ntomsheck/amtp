@@ -52,19 +52,132 @@ class TestController extends Controller
     
     public function portTest(Request $request)
     {
+        header('Access-Control-Allow-Origin: *');
+        
         if(!$testId = $this->currentTest($request))
                 return redirect('/');
         
         $test = \App\DeviceTest::find($testId);
-        $testList = \App\Test::all();
+        $testList = \App\Test::all();          
+        $interfaces = $test->deviceModel->interfaces;
         
-        return view('test', ['testCase' => $test, 'testList' => $testList]);
+        return view('test', ['testCase' => $test, 'testList' => $testList, 'interfaces' => $interfaces]);
         
     }
     
     public function connectivity(Request $request)
     {
-        return response()->json(['ok' => true]);
+//        if(!$request->ajax()) {
+//            redirect('/test');
+//        }
+        
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $deviceTest = \App\DeviceTest::find($testId);
+        
+        //This means that all tests are complete for the current interface yet we're trying to complete another
+        if(!$interface = $deviceTest->currentInterface()) {
+            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
+        }
+        
+        $testResult = new \App\DeviceTestResult();
+        $testResult->device_test_id = $testId;
+        $testResult->interface_number = $interface;
+        $testResult->test_id = 1;
+        $testResult->result = true;
+        
+        if($testResult->save()) {
+            return response()->json(['success' => true, 'test_id' => 1]);
+        }
+        
+        abort(400);
+    }
+    
+    public function dhcp(Request $request)
+    {
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $deviceTest = \App\DeviceTest::find($testId);
+        
+        if(!$interface = $deviceTest->currentInterface()) {
+            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
+        }
+        
+        $testResult = new \App\DeviceTestResult();
+        $testResult->device_test_id = $testId;
+        $testResult->interface_number = $interface;
+        $testResult->test_id = 2;
+        $testResult->result = $request->input('local_ip');
+        
+        if($testResult->save()) {
+            return response()->json(['success' => true, 'test_id' => 2]);
+        }
+        
+        abort(400);        
+    }
+    
+    public function routing(Request $request)
+    {
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $deviceTest = \App\DeviceTest::find($testId);
+        
+        if(!$interface = $deviceTest->currentInterface()) {
+            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
+        }
+        
+        $testResult = new \App\DeviceTestResult();
+        $testResult->device_test_id = $testId;
+        $testResult->interface_number = $interface;
+        $testResult->test_id = 3;
+        $testResult->result = $request->input('success');
+        
+        if($testResult->save()) {
+            return response()->json(['success' => true, 'test_id' => 3]);
+        }
+        
+        abort(400);
+    }
+    
+    public function dns(Request $request)
+    {
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $deviceTest = \App\DeviceTest::find($testId);
+        
+        if(!$interface = $deviceTest->currentInterface()) {
+            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
+        }
+        
+        $testResult = new \App\DeviceTestResult();
+        $testResult->device_test_id = $testId;
+        $testResult->interface_number = $interface;
+        $testResult->test_id = 4;
+        $testResult->result = $request->input('success');
+        
+        if($testResult->save()) {
+            return response()->json(['success' => true, 'test_id' => 4]);
+        }
+        
+        abort(400);    
+    }
+    
+    public function checkDns(Request $request)
+    {
+        
+        header('Access-Control-Allow-Origin: *');
+
+        $host = $_SERVER['HTTP_HOST'];
+        
+        return response()->json(['success' => true, 'hostname' => $host]);
     }
 
     /**

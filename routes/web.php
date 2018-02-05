@@ -19,6 +19,14 @@ Route::any('/test', 'TestController@portTest');
 
 Route::any('/test/connectivity', 'TestController@connectivity');
 
+Route::post('/test/dhcp', 'TestController@dhcp');
+
+Route::post('/test/dns', 'TestController@dns');
+
+Route::any('/test/checkDns', 'TestController@checkDns');
+
+Route::post('/test/routing', 'TestController@routing');
+
 Auth::routes();
 
 Route::get('/home', 'HomeController@index')->name('home');
