@@ -20,12 +20,12 @@ class DeviceModelInterfaceSeeder extends Seeder
 //        DB::table('device_model_interface')->insert(['model_id' => '2', 'interface_number' => '2', 'interface_name' => 'LAN2']);
         
         //6500-E
-        DB::table('device_model_interface')->insert(['model_id' => '3', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '3', 'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '3', 'machine_name' => 'lan1', 'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '3', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
         
         //6500-E/3G
-        DB::table('device_model_interface')->insert(['model_id' => '4', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '4', 'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '4', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '4', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
 
 //        //6500W-A2
 //        DB::table('device_model_interface')->insert(['model_id' => '5', 'interface_number' => '1', 'interface_name' => 'LAN1']);
@@ -36,45 +36,45 @@ class DeviceModelInterfaceSeeder extends Seeder
 //        DB::table('device_model_interface')->insert(['model_id' => '6', 'interface_number' => '2', 'interface_name' => 'LAN2']);        
         
         //6500-M
-        DB::table('device_model_interface')->insert(['model_id' => '7', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '7', 'interface_number' => '2', 'interface_name' => 'LAN2']);
-        DB::table('device_model_interface')->insert(['model_id' => '7', 'interface_number' => '3', 'interface_name' => 'LAN3']);
-        DB::table('device_model_interface')->insert(['model_id' => '7', 'interface_number' => '4', 'interface_name' => 'LAN4']);
-        DB::table('device_model_interface')->insert(['model_id' => '7', 'interface_number' => '5', 'interface_name' => 'WIFI']);
+        DB::table('device_model_interface')->insert(['model_id' => '7', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '7', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '7', 'machine_name' => 'lan3',  'interface_number' => '3', 'interface_name' => 'LAN3']);
+        DB::table('device_model_interface')->insert(['model_id' => '7', 'machine_name' => 'lan4',  'interface_number' => '4', 'interface_name' => 'LAN4']);
+        DB::table('device_model_interface')->insert(['model_id' => '7', 'machine_name' => 'wifi',  'interface_number' => '5', 'interface_name' => 'WIFI']);
         
         //6500-M/LTE
-        DB::table('device_model_interface')->insert(['model_id' => '8', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '8', 'interface_number' => '2', 'interface_name' => 'LAN2']);
-        DB::table('device_model_interface')->insert(['model_id' => '8', 'interface_number' => '3', 'interface_name' => 'LAN3']);
-        DB::table('device_model_interface')->insert(['model_id' => '8', 'interface_number' => '4', 'interface_name' => 'LAN4']);
-        DB::table('device_model_interface')->insert(['model_id' => '8', 'interface_number' => '5', 'interface_name' => 'WIFI']);
+        DB::table('device_model_interface')->insert(['model_id' => '8', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '8', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '8', 'machine_name' => 'lan3',  'interface_number' => '3', 'interface_name' => 'LAN3']);
+        DB::table('device_model_interface')->insert(['model_id' => '8', 'machine_name' => 'lan4',  'interface_number' => '4', 'interface_name' => 'LAN4']);
+        DB::table('device_model_interface')->insert(['model_id' => '8', 'machine_name' => 'wifi',  'interface_number' => '5', 'interface_name' => 'WIFI']);
 
         //6500-M1/LTE
-        DB::table('device_model_interface')->insert(['model_id' => '9', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '9', 'interface_number' => '2', 'interface_name' => 'LAN2']);
-        DB::table('device_model_interface')->insert(['model_id' => '9', 'interface_number' => '3', 'interface_name' => 'LAN3']);
-        DB::table('device_model_interface')->insert(['model_id' => '9', 'interface_number' => '4', 'interface_name' => 'LAN4']);
-        DB::table('device_model_interface')->insert(['model_id' => '9', 'interface_number' => '5', 'interface_name' => 'WIFI']);
+        DB::table('device_model_interface')->insert(['model_id' => '9', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '9', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '9', 'machine_name' => 'lan3',  'interface_number' => '3', 'interface_name' => 'LAN3']);
+        DB::table('device_model_interface')->insert(['model_id' => '9', 'machine_name' => 'lan4',  'interface_number' => '4', 'interface_name' => 'LAN4']);
+        DB::table('device_model_interface')->insert(['model_id' => '9', 'machine_name' => 'wifi',  'interface_number' => '5', 'interface_name' => 'WIFI']);
 
         //6500-MW1
-        DB::table('device_model_interface')->insert(['model_id' => '10', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '10', 'interface_number' => '2', 'interface_name' => 'LAN2']);
-        DB::table('device_model_interface')->insert(['model_id' => '10', 'interface_number' => '3', 'interface_name' => 'LAN3']);
-        DB::table('device_model_interface')->insert(['model_id' => '10', 'interface_number' => '4', 'interface_name' => 'LAN4']);
-        DB::table('device_model_interface')->insert(['model_id' => '10', 'interface_number' => '5', 'interface_name' => 'WIFI']);
+        DB::table('device_model_interface')->insert(['model_id' => '10', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '10', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '10', 'machine_name' => 'lan3',  'interface_number' => '3', 'interface_name' => 'LAN3']);
+        DB::table('device_model_interface')->insert(['model_id' => '10', 'machine_name' => 'lan4',  'interface_number' => '4', 'interface_name' => 'LAN4']);
+        DB::table('device_model_interface')->insert(['model_id' => '10', 'machine_name' => 'wifi',  'interface_number' => '5', 'interface_name' => 'WIFI']);
 
         //6500-MW1/3G
-        DB::table('device_model_interface')->insert(['model_id' => '11', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '11', 'interface_number' => '2', 'interface_name' => 'LAN2']);
-        DB::table('device_model_interface')->insert(['model_id' => '11', 'interface_number' => '3', 'interface_name' => 'LAN3']);
-        DB::table('device_model_interface')->insert(['model_id' => '11', 'interface_number' => '4', 'interface_name' => 'LAN4']);
-        DB::table('device_model_interface')->insert(['model_id' => '11', 'interface_number' => '5', 'interface_name' => 'WIFI']);
+        DB::table('device_model_interface')->insert(['model_id' => '11', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '11', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '11', 'machine_name' => 'lan3',  'interface_number' => '3', 'interface_name' => 'LAN3']);
+        DB::table('device_model_interface')->insert(['model_id' => '11', 'machine_name' => 'lan4',  'interface_number' => '4', 'interface_name' => 'LAN4']);
+        DB::table('device_model_interface')->insert(['model_id' => '11', 'machine_name' => 'wifi',  'interface_number' => '5', 'interface_name' => 'WIFI']);
 
         //6500-MW1/LTE
-        DB::table('device_model_interface')->insert(['model_id' => '12', 'interface_number' => '1', 'interface_name' => 'LAN1']);
-        DB::table('device_model_interface')->insert(['model_id' => '12', 'interface_number' => '2', 'interface_name' => 'LAN2']);
-        DB::table('device_model_interface')->insert(['model_id' => '12', 'interface_number' => '3', 'interface_name' => 'LAN3']);
-        DB::table('device_model_interface')->insert(['model_id' => '12', 'interface_number' => '4', 'interface_name' => 'LAN4']);
-        DB::table('device_model_interface')->insert(['model_id' => '12', 'interface_number' => '5', 'interface_name' => 'WIFI']);     
+        DB::table('device_model_interface')->insert(['model_id' => '12', 'machine_name' => 'lan1',  'interface_number' => '1', 'interface_name' => 'LAN1']);
+        DB::table('device_model_interface')->insert(['model_id' => '12', 'machine_name' => 'lan2',  'interface_number' => '2', 'interface_name' => 'LAN2']);
+        DB::table('device_model_interface')->insert(['model_id' => '12', 'machine_name' => 'lan3',  'interface_number' => '3', 'interface_name' => 'LAN3']);
+        DB::table('device_model_interface')->insert(['model_id' => '12', 'machine_name' => 'lan4',  'interface_number' => '4', 'interface_name' => 'LAN4']);
+        DB::table('device_model_interface')->insert(['model_id' => '12', 'machine_name' => 'wifi',  'interface_number' => '5', 'interface_name' => 'WIFI']);     
     }
 }

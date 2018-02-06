@@ -16,6 +16,7 @@ class CreateDeviceModelInterfaceTable extends Migration
         Schema::create('device_model_interface', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('model_id')->unsigned();
+            $table->string('machine_name');
             $table->integer('interface_number')->unsigned();
             $table->string('interface_name');
             $table->timestamps();

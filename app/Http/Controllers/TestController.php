@@ -55,10 +55,17 @@ class TestController extends Controller
         header('Access-Control-Allow-Origin: *');
         
         if(!$testId = $this->currentTest($request))
-                return redirect('/');
+            return redirect('/');
+        
+        
         
         $test = \App\DeviceTest::find($testId);
-        $testList = \App\Test::all();          
+        
+        if(!$test) {
+            return $this->flushTest($request);
+        }
+        
+        $testList = \App\Test::orderBy('order', 'ASC')->get();          
         $interfaces = $test->deviceModel->interfaces;
         
         return view('test', ['testCase' => $test, 'testList' => $testList, 'interfaces' => $interfaces]);
@@ -89,7 +96,7 @@ class TestController extends Controller
         $testResult->result = true;
         
         if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 1]);
+            return response()->json(['success' => true, 'test_id' => 'connectivity']);
         }
         
         abort(400);
@@ -114,7 +121,7 @@ class TestController extends Controller
         $testResult->result = $request->input('local_ip');
         
         if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 2]);
+            return response()->json(['success' => true, 'test_id' => 'dhcp']);
         }
         
         abort(400);        
@@ -139,7 +146,7 @@ class TestController extends Controller
         $testResult->result = $request->input('success');
         
         if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 3]);
+            return response()->json(['success' => true, 'test_id' => 'routing']);
         }
         
         abort(400);
@@ -164,11 +171,36 @@ class TestController extends Controller
         $testResult->result = $request->input('success');
         
         if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 4]);
+            return response()->json(['success' => true, 'test_id' => 'dns']);
         }
         
         abort(400);    
     }
+    
+    public function throughput(Request $request)
+    {
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $deviceTest = \App\DeviceTest::find($testId);
+        
+        if(!$interface = $deviceTest->currentInterface()) {
+            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
+        }
+        
+        $testResult = new \App\DeviceTestResult();
+        $testResult->device_test_id = $testId;
+        $testResult->interface_number = $interface;
+        $testResult->test_id = 5;
+        $testResult->result = $request->input('download');
+        
+        if($testResult->save()) {
+            return response()->json(['success' => true, 'test_id' => 'throughput']);
+        }
+        
+        abort(400);    
+    }    
     
     public function checkDns(Request $request)
     {
@@ -178,6 +210,77 @@ class TestController extends Controller
         $host = $_SERVER['HTTP_HOST'];
         
         return response()->json(['success' => true, 'hostname' => $host]);
+    }
+    
+    public function throughputDown(Request $request)
+    {
+        // Disable Compression
+        @ini_set('zlib.output_compression', 'Off');
+        @ini_set('output_buffering', 'Off');
+        @ini_set('output_handler', '');
+        // Headers
+        header('HTTP/1.1 200 OK');
+        // Download follows...
+        header('Content-Description: File Transfer');
+        header('Content-Type: application/octet-stream');
+        header('Content-Disposition: attachment; filename=random.dat');
+        header('Content-Transfer-Encoding: binary');
+        // Never cache me
+        header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+        header('Cache-Control: post-check=0, pre-check=0', false);
+        header('Pragma: no-cache');
+        // Generate data
+        $data=openssl_random_pseudo_bytes(1048576);
+        // Deliver chunks of 1048576 bytes
+        $chunks=isset($_GET['ckSize']) ? intval($_GET['ckSize']) : 4;
+        if(empty($chunks)){$chunks = 4;}
+        if($chunks>100){$chunks = 100;}
+        for($i=0;$i<$chunks;$i++){
+            echo $data;
+            flush();
+        }        
+    }
+    
+    public function throughputGetIP()
+    {
+        header('Content-Type: text/plain; charset=utf-8');
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            echo $_SERVER['HTTP_CLIENT_IP'];
+        } elseif (!empty($_SERVER['X-Real-IP'])) {
+            echo $_SERVER['X-Real-IP'];
+        } elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            echo $_SERVER['HTTP_X_FORWARDED_FOR'];
+        } else {
+            echo $_SERVER['REMOTE_ADDR'];
+        }
+    }
+    
+    public function throughputEmpty()
+    {
+        header( "HTTP/1.1 200 OK" );
+        header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+        header("Cache-Control: post-check=0, pre-check=0", false);
+        header("Pragma: no-cache");
+        header("Connection: keep-alive");
+        
+    }
+    
+    public function cancelTest(Request $request)
+    {
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $request->session()->flush();
+        
+        
+        $deviceTest = \App\DeviceTest::find($testId);
+        if($deviceTest->delete()) {
+            return response()->json(['success' => true]);
+        } else {
+            abort(401);
+        }
+        
     }
 
     /**
@@ -252,5 +355,15 @@ class TestController extends Controller
             return false;
         
         return $request->session()->get('test_id');
+    }
+    
+    protected function flushTest(Request $request)
+    {
+        if(!$request->session()->has('test_id'))
+            return false;
+                
+        $request->session()->flush();
+        
+        return redirect('/');
     }
 }

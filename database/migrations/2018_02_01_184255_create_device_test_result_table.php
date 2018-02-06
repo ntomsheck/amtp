@@ -19,7 +19,7 @@ class CreateDeviceTestResultTable extends Migration
             $table->integer('interface_number')->unsigned();
             $table->integer('test_id')->unsigned();
             $table->string('result');
-            $table->tinyInteger('pass');
+            //$table->tinyInteger('pass');
             $table->timestamps();
             
 

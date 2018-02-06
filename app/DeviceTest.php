@@ -59,6 +59,9 @@ class DeviceTest extends Model
         
         if($nextTest)
             return $lastInterfaceNumber;
+        elseif($nextInterface = $nextInterface = $this->nextInterface())
+            return $nextInterface['number'];
+        
 
         return false;
     }

@@ -12,6 +12,7 @@
 
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/open-iconic-bootstrap.css') }}" rel="stylesheet">
     <script src="{{ asset('js/app.js') }}"></script>    
 </head>
 <body>
@@ -31,6 +32,7 @@
                     <!-- Branding Image -->
                     <a class="navbar-brand" href="{{ url('/') }}">
                         {{ config('app.name', 'Laravel') }}
+                        <span class="h6">beta</span>
                     </a>
                 </div>
 

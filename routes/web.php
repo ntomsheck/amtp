@@ -15,6 +15,8 @@ Route::get('/', 'TestController@index');
 
 Route::post('/start', 'TestController@start');
 
+Route::post('/test/clear', 'TestController@cancelTest');
+
 Route::any('/test', 'TestController@portTest');
 
 Route::any('/test/connectivity', 'TestController@connectivity');
@@ -26,6 +28,14 @@ Route::post('/test/dns', 'TestController@dns');
 Route::any('/test/checkDns', 'TestController@checkDns');
 
 Route::post('/test/routing', 'TestController@routing');
+
+Route::any('/test/download', 'TestController@throughputDown');
+
+Route::post('/test/throughput', 'TestController@throughput');
+
+Route::any('getIP.php', 'TestController@throughputGetIP');
+
+Route::any('empty.php', 'TestController@throughputEmpty');
 
 Auth::routes();
 
