@@ -128,6 +128,11 @@
         
     };
     
+    function nextTest(resultObj) {
+        
+        var portCount = Object.keys(obj).legnth;
+    }
+    
     var w=null; //speedtest worker
     var data=null; //data from worker    
     function I(id){return document.getElementById(id);}
@@ -139,8 +144,8 @@
     var progColor="#EEEEEE";
     
     var parameters={ //custom test parameters. See doc.md for a complete list
-        time_dl: 10, //download test lasts 10 seconds
-        time_ul: 10, //upload test lasts 10 seconds
+        time_dl: 180, //download test lasts 10 seconds
+        time_ul: 180, //upload test lasts 10 seconds
         count_ping: 35 //ping+jitter test does 20 pings
     };    
 
@@ -288,7 +293,7 @@
         },
         throughput: function() {
             w=new Worker('/js/speedtest_worker.js');
-            w.postMessage('start'); //Add optional parameters as a JSON object to this command
+            w.postMessage('start '+JSON.stringify(parameters)); //Add optional parameters as a JSON object to this command
             //I("startStopBtn").className="running";
             w.onmessage=function(e){
                 data=e.data.split(';');
