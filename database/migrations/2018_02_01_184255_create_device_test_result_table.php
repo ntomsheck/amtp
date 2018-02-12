@@ -16,9 +16,9 @@ class CreateDeviceTestResultTable extends Migration
         Schema::create('device_test_result', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('device_test_id')->unsigned();
-            $table->integer('interface_number')->unsigned();
-            $table->integer('test_id')->unsigned();
-            $table->string('result');
+            $table->char('interface', 20);
+            $table->char('test_name', 20);
+            $table->text('result');
             //$table->tinyInteger('pass');
             $table->timestamps();
             

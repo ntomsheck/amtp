@@ -19,6 +19,8 @@ Route::post('/test/clear', 'TestController@cancelTest');
 
 Route::any('/test', 'TestController@portTest');
 
+Route::any('/test/save', 'TestController@store');
+
 Route::any('/test/connectivity', 'TestController@connectivity');
 
 Route::post('/test/dhcp', 'TestController@dhcp');

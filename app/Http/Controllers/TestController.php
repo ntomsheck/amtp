@@ -39,7 +39,7 @@ class TestController extends Controller
                 'regex:/^[a-f0-9]{12}$/i'
             ],
             'model_id' => 'required',
-            'tester_name' => 'required',
+            'username' => 'required',
         ]);
         
         $deviceTest = tap(new \App\DeviceTest($validated))->save();
@@ -74,138 +74,14 @@ class TestController extends Controller
     
     public function connectivity(Request $request)
     {
-//        if(!$request->ajax()) {
-//            redirect('/test');
-//        }
-        
-        if(!$testId = $this->currentTest($request)) {
-            return abort(403);
-        }
-        
-        $deviceTest = \App\DeviceTest::find($testId);
-        
-        //This means that all tests are complete for the current interface yet we're trying to complete another
-        if(!$interface = $deviceTest->currentInterface()) {
-            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
-        }
-        
-        $testResult = new \App\DeviceTestResult();
-        $testResult->device_test_id = $testId;
-        $testResult->interface_number = $interface;
-        $testResult->test_id = 1;
-        $testResult->result = true;
-        
-        if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 'connectivity']);
-        }
-        
-        abort(400);
+        return response()->json(['success' => true]);
     }
-    
-    public function dhcp(Request $request)
-    {
-        if(!$testId = $this->currentTest($request)) {
-            return abort(403);
-        }
-        
-        $deviceTest = \App\DeviceTest::find($testId);
-        
-        if(!$interface = $deviceTest->currentInterface()) {
-            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
-        }
-        
-        $testResult = new \App\DeviceTestResult();
-        $testResult->device_test_id = $testId;
-        $testResult->interface_number = $interface;
-        $testResult->test_id = 2;
-        $testResult->result = $request->input('local_ip');
-        
-        if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 'dhcp']);
-        }
-        
-        abort(400);        
-    }
-    
-    public function routing(Request $request)
-    {
-        if(!$testId = $this->currentTest($request)) {
-            return abort(403);
-        }
-        
-        $deviceTest = \App\DeviceTest::find($testId);
-        
-        if(!$interface = $deviceTest->currentInterface()) {
-            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
-        }
-        
-        $testResult = new \App\DeviceTestResult();
-        $testResult->device_test_id = $testId;
-        $testResult->interface_number = $interface;
-        $testResult->test_id = 3;
-        $testResult->result = $request->input('success');
-        
-        if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 'routing']);
-        }
-        
-        abort(400);
-    }
-    
-    public function dns(Request $request)
-    {
-        if(!$testId = $this->currentTest($request)) {
-            return abort(403);
-        }
-        
-        $deviceTest = \App\DeviceTest::find($testId);
-        
-        if(!$interface = $deviceTest->currentInterface()) {
-            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
-        }
-        
-        $testResult = new \App\DeviceTestResult();
-        $testResult->device_test_id = $testId;
-        $testResult->interface_number = $interface;
-        $testResult->test_id = 4;
-        $testResult->result = $request->input('success');
-        
-        if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 'dns']);
-        }
-        
-        abort(400);    
-    }
-    
-    public function throughput(Request $request)
-    {
-        if(!$testId = $this->currentTest($request)) {
-            return abort(403);
-        }
-        
-        $deviceTest = \App\DeviceTest::find($testId);
-        
-        if(!$interface = $deviceTest->currentInterface()) {
-            abort(401, 'Consistency has somehow failed.  Please contact your administrator.');
-        }
-        
-        $testResult = new \App\DeviceTestResult();
-        $testResult->device_test_id = $testId;
-        $testResult->interface_number = $interface;
-        $testResult->test_id = 5;
-        $testResult->result = $request->input('download');
-        
-        if($testResult->save()) {
-            return response()->json(['success' => true, 'test_id' => 'throughput']);
-        }
-        
-        abort(400);    
-    }    
-    
+       
     public function checkDns(Request $request)
     {
         
         header('Access-Control-Allow-Origin: *');
+        header('Access-Control-Allow-Headers: x-csrf-token');
 
         $host = $_SERVER['HTTP_HOST'];
         
@@ -301,7 +177,37 @@ class TestController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        print_r($request->input('test_results'));
+        
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $test = \App\DeviceTest::find($testId);
+        
+        //clean slate
+        $test->results()->delete();
+        
+        $results = $request->input('test_results')['interfaces'];
+        
+        foreach($results as $interface => $interfaceTests) {
+            foreach($interfaceTests as $test => $testResults){
+                
+                $result = new \App\DeviceTestResult();
+                $result->device_test_id = $testId;
+                $result->interface = $interface;
+                $result->test_name = $test;
+                $result->result = json_encode($testResults);
+                if(!$result->save()) {
+                    return response()->json(['success' => false, 'message' => "Could not save test results for " . $test]);
+                }
+                
+            }
+            
+        }
+        
+        return response()->json(['success' => true]);   
+        
     }
 
     /**

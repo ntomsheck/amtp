@@ -17,7 +17,7 @@ class CreateDeviceTestTable extends Migration
             $table->increments('id');
             $table->integer('model_id')->unsigned();
             $table->char('mac_address', 12);
-            $table->string('tester_name');
+            $table->string('username');
             $table->timestamps();
             
             $table->index(['model_id', 'mac_address']);

@@ -1,7 +1,9 @@
 @extends('layouts.app')
 @section('content')
 <style type="text/css">
-
+    .font-weight-bold {
+        font-weight: bold;
+    }
     .throughput-panel{
         margin-top:2em;
     }
@@ -47,40 +49,39 @@
 	}*/
 </style>
 <div class="container">
-    <div class="col">
-        <div class="row">
-            <h1>Test In Progress</h1>      
-            @foreach ($testList as $test)
-            <p id="test_{{ $test->machine_name }}" class="h4"><span class="oi oi-loop-circular"></span>&nbsp;{{ $test->test_name }}</p>
-            @endforeach
-
+    <div class="row">
+        <div class="col-xs-12">
+        <h1>Test In Progress</h1>      
+        @foreach ($testList as $test)
+        <p class="test_item" id="test_{{ $test->name }}" class="h4"><span class="oi oi-loop-circular"></span>&nbsp;{{ $test->description }}</p>
+        @endforeach
         </div>
-        <div class="row throughput-panel">
-            <div class="col-xs-3 throughput-test">
-                    <div class="name">Download</div>
-                    <canvas id="dlMeter" class="meter"></canvas>
-                    <div id="dlText" class="result"></div>
-                    <div class="unit">Mbps</div>
-            </div>
-            <div class="col-xs-3 throughput-test">
-                    <div class="name">Upload</div>
-                    <canvas id="ulMeter" class="meter"></canvas>
-                    <div id="ulText" class="result"></div>
-                    <div class="unit">Mbps</div>
-            </div>
+    </div>
+    <div class="row throughput-panel">
+        <div class="col-xs-3 throughput-test">
+                <div class="name">Download</div>
+                <canvas id="dlMeter" class="meter"></canvas>
+                <div id="dlText" class="result"></div>
+                <div class="unit">Mbps</div>
+        </div>
+        <div class="col-xs-3 throughput-test">
+                <div class="name">Upload</div>
+                <canvas id="ulMeter" class="meter"></canvas>
+                <div id="ulText" class="result"></div>
+                <div class="unit">Mbps</div>
+        </div>
 
-            <div class="col-xs-3 throughput-test">
-                    <div class="name">Ping</div>
-                    <canvas id="pingMeter" class="meter"></canvas>
-                    <div id="pingText" class="result"></div>
-                    <div class="unit">ms</div>
-            </div>
-            <div class="col-xs-3 throughput-test">
-                    <div class="name">Jitter</div>
-                    <canvas id="jitMeter" class="meter"></canvas>
-                    <div id="jitText" class="result"></div>
-                    <div class="unit">ms</div>
-            </div>
+        <div class="col-xs-3 throughput-test">
+                <div class="name">Ping</div>
+                <canvas id="pingMeter" class="meter"></canvas>
+                <div id="pingText" class="result"></div>
+                <div class="unit">ms</div>
+        </div>
+        <div class="col-xs-3 throughput-test">
+                <div class="name">Jitter</div>
+                <canvas id="jitMeter" class="meter"></canvas>
+                <div id="jitText" class="result"></div>
+                <div class="unit">ms</div>
         </div>
     </div>
 </div>
@@ -94,7 +95,7 @@
         </button>
       </div>
       <div id="instruction" class="modal-body">
-        <p>Please connect your ethernet cable to <span id="if_name">{{ $testCase->nextInterface()['name'] }}</span> and wait 30 seconds.</p>
+        <p>Please connect to <span class="font-weight-bold" id="if_name">{{ $testCase->nextInterface()['name'] }}</span> and wait 30 seconds.</p>
       </div>
       <div class="modal-footer">
         <button id="connected" type="button" class="btn btn-success">Done</button>
@@ -114,23 +115,230 @@
     var interfaces = new Object(); //use an object here to store information
     
     @foreach ($interfaces as $interface)
-    ifList.push("{{ $interface->machine_name }}");
-    interfaces.{{ $interface->machine_name }} = { index: {{ $interface->interface_number }}, name: "{{ $interface->interface_name }}" };
+    ifList.push("{{ $interface->name }}");
+    interfaces.{{ $interface->name }} = { index: {{ $interface->index }}, name: "{{ $interface->description }}" };
     @endforeach
     
     //using an array to guarantee the order    
     var tests = [];
     @foreach ($testList as $test)
-    tests.push("{{ $test->machine_name }}");
+    tests.push("{{ $test->name }}");
     @endforeach
     
-    var testResults = {
+    var results = {
+        interfaces: {},
         
     };
     
-    function nextTest(resultObj) {
+    //function to (re)initialize UI
+    function initUI(){
+        drawMeter(I("dlMeter"),0,meterBk,dlColor,0);
+        drawMeter(I("ulMeter"),0,meterBk,ulColor,0);
+        drawMeter(I("pingMeter"),0,meterBk,pingColor,0);
+        drawMeter(I("jitMeter"),0,meterBk,jitColor,0);
+        I("dlText").textContent="";
+        I("ulText").textContent="";
+        I("pingText").textContent="";
+        I("jitText").textContent="";
+    }      
+    
+    var ui = {
+        tests: {
+            resetAll: function() {
+                $('.test_item span').removeClass().addClass('oi oi-clock');
+            },
+            inProgress: function(test_id) {
+                var divId = '#test_' + test_id + ' span';
+                $(divId).removeClass().addClass('oi oi-loop-circular text-info');                
+            },
+            pass: function(test_id) {
+                var divId = '#test_' + test_id + ' span';
+                $(divId).removeClass().addClass('oi oi-check text-success');
+            },
+            fail: function(test_id) {
+                var divId = '#test_' + test_id + ' span';
+                $(divId).removeClass().addClass('oi oi-x text-danger');
+            }
+        },
+        throughput: {
+            resetAll: function() {
+                initUI();
+            }
+        },
+        resetAll: function() {
+            ui.tests.resetAll();
+            ui.throughput.resetAll();
+        }
+    };
+    
+    var resultHandler = {
+        interfaceIndex: function(obj) 
+        {
+            var interfaceCount = Object.keys(obj).length;
+            //index is zero-indexed but .length always starts at 1
+            return --interfaceCount;
+        },
+        interfaceName: function(index)
+        {
+            if(typeof ifList[index] === 'undefined') {
+                return false;
+            } else {
+                return ifList[index];
+            }
+        },
+        testIndex: function(obj, interfaceName)
+        {
+            return Object.keys(obj[interfaceName]).length;
+        },
+        testName: function(index)
+        {
+            if(typeof tests[index] === 'undefined') {
+                return false;
+            } else {
+                return tests[index];
+            }
+        }
         
-        var portCount = Object.keys(obj).legnth;
+    };
+    
+    function saveResults(obj)
+    {
+        $.ajax({
+            type: "post",
+            url: "/test/save",
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            cache: false,
+            data: {'test_results' : obj},
+            dataType: "json",
+            success: saveResultsSuccess,
+            error: saveResultsError
+        });            
+    }
+
+    function saveResultsSuccess(data)
+    {
+        console.log(data);
+    }
+    
+    function saveResultsError(XMLHttpRequest, textStatus, errorThrown) {
+        console.log(textStatus);
+    }
+
+    //interfaces only appear if tests have been STARTED
+    function currentInterfaceIndex(obj) 
+    {
+        var interfaceCount = Object.keys(obj).length;
+        //index is zero-indexed but .length always starts at 1
+        return --interfaceCount;
+    }
+    
+    //tests only appear if the test has been COMPLETED
+    function nextTestIndex(obj, interfaceName)
+    {
+        return Object.keys(obj[interfaceName]).length;
+    }
+    
+    function interfaceName(index)
+    {
+        if(typeof ifList[index] === 'undefined') {
+            return false;
+        } else {
+            return ifList[index];
+        }        
+    }
+    
+    function testName(index)
+    {
+        if(typeof tests[index] === 'undefined') {
+            return false;
+        } else {
+            return tests[index];
+        }
+    }
+
+    function getTest(obj)
+    {        
+        var ifIndex = currentInterfaceIndex(obj);
+        
+        if(ifIndex < 0) {
+            initializeNextInterface(obj);
+            return false;
+        }
+        
+        var ifName = interfaceName(ifIndex);
+                
+        var testIndex = nextTestIndex(obj, ifName);
+        
+        var testId = testName(testIndex);
+        
+        if(testId === false) { //all tests complete for interface
+            finalizeInterface();
+            initializeNextInterface(obj);
+            return false;
+        }
+                
+        return {interface: ifName, test: testId};
+    }
+    
+    function finalizeInterface()
+    {
+        saveResults(results);
+    }
+    
+    function initializeNextInterface(obj)
+    {
+        var ifIndex = currentInterfaceIndex(obj);
+        ifIndex++;
+        
+        var interface = interfaceName(ifIndex);
+        
+        if(interface === false) {
+            return testsCompleted();
+        }
+        
+        obj[interface] = {};
+        
+        interfaceDescription = interfaces[interface].name;
+        
+        $('#if_name').text(interfaceDescription);
+        $('#instructionModal').modal('show');
+        
+        return true;
+    }
+    
+    function testsCompleted()
+    {
+        alert('all tests completed');
+        return;
+    }
+    
+    function recordTestResult(test, result)
+    {
+        currentTest = getTest(results.interfaces);
+        
+        var uiMethod = ((result.success) ? 'pass' : 'fail');
+        
+        ui.tests[uiMethod](test);
+
+        results.interfaces[currentTest.interface][test] = result;
+        console.log(results);
+        
+        runTest();
+    }
+    
+    function runTest()
+    {
+        var testSet = getTest(results.interfaces);
+        
+        //this will happen when the next interface has to be set up
+        if(testSet === false) {
+            return false;
+        }
+        
+        ui.tests.inProgress(testSet.test);
+        testHandler[testSet.test].run();
     }
     
     var w=null; //speedtest worker
@@ -141,13 +349,7 @@
         ulColor="#309030",
         pingColor="#AA6060",
         jitColor="#AA6060";
-    var progColor="#EEEEEE";
-    
-    var parameters={ //custom test parameters. See doc.md for a complete list
-        time_dl: 180, //download test lasts 10 seconds
-        time_ul: 180, //upload test lasts 10 seconds
-        count_ping: 35 //ping+jitter test does 20 pings
-    };    
+    var progColor="#EEEEEE";  
 
     //CODE FOR GAUGES
     function drawMeter(c,amount,bk,fg,progress,prog){
@@ -213,102 +415,116 @@
         updateUI();
     }
     frame(); //start frame loop
-    //function to (re)initialize UI
-    function initUI(){
-        drawMeter(I("dlMeter"),0,meterBk,dlColor,0);
-        drawMeter(I("ulMeter"),0,meterBk,ulColor,0);
-        drawMeter(I("pingMeter"),0,meterBk,pingColor,0);
-        drawMeter(I("jitMeter"),0,meterBk,jitColor,0);
-        I("dlText").textContent="";
-        I("ulText").textContent="";
-        I("pingText").textContent="";
-        I("jitText").textContent="";
-    }      
     
-    var portHandler = {
-        connectivity: function() {
-            $.ajax({
-                type:"post",
-                url:"/test/connectivity",
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },               
-                async: true,
-                cache: false,
-                success: function(data, textStatus, XMLHttpRequest) {
-                    updateResult(data);
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    console.log(textStatus);
-                }
-            });
-
+    
+    /**
+     * testHandler object must follow the following structure:
+     * testName: {
+     *     run: {},
+     *     success: {},
+     *     error: {},
+     * }
+     */
+    var testHandler = {
+        connectivity: {
+            run: function() {
+                testHandler.ajaxRequest("/test/connectivity", "post", {}, 'connectivity');
+            },
+            success: function(data) {
+                recordTestResult('connectivity', {success: true});
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                recordTestResult('connectivity', {success: false});
+            }
         },
-        dhcp: function() {
-            window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//compatibility for Firefox and chrome
-            var pc = new RTCPeerConnection({iceServers:[]}), noop = function(){};      
-            pc.createDataChannel('');//create a bogus data channel
-            pc.createOffer(pc.setLocalDescription.bind(pc), noop);// create offer and set local description
-            pc.onicecandidate = function(ice)
-            {
-                if (ice && ice.candidate && ice.candidate.candidate){
-                    var ipAddress = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(ice.candidate.candidate)[1]; 
-                    portHandler.storeTestResult('/test/dhcp', {local_ip: ipAddress})
-                    pc.onicecandidate = noop;
-                }
-            };            
+        dhcp: {
+            run: function() {
+                window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//compatibility for Firefox and chrome
+                var pc = new RTCPeerConnection({iceServers:[]}), noop = function(){};      
+                pc.createDataChannel('');//create a bogus data channel
+                pc.createOffer(pc.setLocalDescription.bind(pc), noop);// create offer and set local description
+                pc.onicecandidate = function(ice)
+                {
+                    if (ice && ice.candidate && ice.candidate.candidate){
+                        var ipAddress = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(ice.candidate.candidate)[1]; 
+                        testHandler.dhcp.success({ip: ipAddress});
+                        pc.onicecandidate = noop;
+                    }
+                };
+            },
+            success: function(data) {
+                recordTestResult('dhcp', {success: true, ip: data.ip});
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                //not currently called
+            }
              
         },
-        routing: function() {
-            $.ajax({
-                type:"get",
-                url:"https://httpbin.org/get",
-                async: true,
-                cache: false,
-                dataType: "json",
-                success: function(data, textStatus, XMLHttpRequest) {
-                    portHandler.storeTestResult('/test/routing', {success: true})
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    portHandler.storeTestResult('/test/routing', {success: false})
-                }
-            });            
+        routing: {
+            run: function() {
+                testHandler.ajaxRequest("https://httpbin.org/get", "get", {}, 'routing');
+            },
+            success: function(data) {
+                recordTestResult('routing', {success: true});
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                recordTestResult('routing', {success: false});
+            }
         },
-        dns: function() {
-            
-            testUrl = 'http://' + makeid() + '.' + wildcardSuffix;
-            
-            $.ajax({
-                type:"get",
-                url:testUrl,             
-                async: true,
-                cache: false,
-                success: function(data, textStatus, XMLHttpRequest) {
-                    portHandler.storeTestResult('/test/dns', {success: true})
-                },
-                error: function(XMLHttpRequest, textStatus, errorThrown) {
-                    portHandler.storeTestResult('/test/dns', {success: false})
-                }
-            });
+        dns: {
+            run: function() {
+                testUrl = 'http://' + makeid() + '.' + wildcardSuffix;
+                testHandler.ajaxRequest(testUrl, "get", {}, 'dns');
+            },
+            success: function(data) {
+                recordTestResult('dns', {success: true});
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                recordTestResult('dns', {success: false});
+            }
         },
-        throughput: function() {
-            w=new Worker('/js/speedtest_worker.js');
-            w.postMessage('start '+JSON.stringify(parameters)); //Add optional parameters as a JSON object to this command
-            //I("startStopBtn").className="running";
-            w.onmessage=function(e){
-                data=e.data.split(';');
-                var status=Number(data[0]);
-                if(status>=4){
-                    console.log(data);
-                    portHandler.storeTestResult('/test/throughput', {download: data[1]});
-                    location.reload();                    
-                    w=null;
-                    updateUI(true);
-                }
-            };            
+        throughput: {
+            run: function() {
+                return testHandler.throughput.success({"skip" : true});
+                var parameters = { //custom test parameters. See doc.md for a complete list
+                    time_dl: 1, //download test lasts 10 seconds
+                    time_ul: 1, //upload test lasts 10 seconds
+                    count_ping: 1 //ping+jitter test does 20 pings
+                };
+
+                w=new Worker('/js/speedtest_worker.js');
+                w.postMessage('start '+JSON.stringify(parameters)); //Add optional parameters as a JSON object to this command
+                //I("startStopBtn").className="running";
+                w.onmessage=function(e){
+                    data=e.data.split(';');
+                    var status=Number(data[0]);
+                    if(status>=4){
+                        resultData = {
+                            download: data[1],
+                            upload: data[2],
+                            ping: data[3],
+                            jitter: data[5],                            
+                            ip: data[4],
+                            download_duration: parameters.time_dl,
+                            upload_duration: parameters.time_ul,
+                            ping_count: parameters.count_ping
+                        };
+                        testHandler.throughput.success(resultData);
+                        w=null;
+                        updateUI(true);
+                    }
+                };
+            },
+            success: function(data) {
+                data.success = true;            
+                recordTestResult('throughput', data);
+            },
+            error: function(XMLHttpRequest, textStatus, errorThrown) {
+                recordTestResult('throughput', {success: false});
+            }
         },
         cancel: function() {
-            portHandler.storeTestResult('/test/clear', {confirm: true});
+            testHandler.storeTestResult('/test/clear', {confirm: true});
             window.location = "/";
         },
         storeTestResult: function(postUrl, postData) {
@@ -329,57 +545,42 @@
                 }
             });             
         },
+        ajaxRequest: function(requestUrl, requestType, requestData, testBranch)
+        {
+            $.ajax({
+                type: requestType,
+                url: requestUrl,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                cache: false,
+                data: requestData,
+                dataType: "json",
+                success: testHandler[testBranch].success,
+                error: testHandler[testBranch].error
+            });
+        }
         
         
 
     };
     
     $(document).ready(function() {
-        
-//        $('#test_connectivity').find('span.oi').removeClass('oi-loop-circular').addClass('oi-check');
-        showInstructions();
+         
+        ui.resetAll();
+        runTest();
         
         $('#connected').click(function() {
-            $('#instructionModal').modal('hide');        
-            portHandler.connectivity();
-            portHandler.dhcp();
-            portHandler.routing();
-            portHandler.dns();
-            portHandler.throughput();
-            
+            $('#instructionModal').modal('hide');
+            ui.resetAll();
+            runTest();            
         });
         
         $('#clear').click(function() {
-            portHandler.cancel();
+            testHandler.cancel();
         })
     });
-    
-    function updateResult(response)
-    {
-        var testId = "test_" + response.test_id;
         
-        if(response.success) {
-            $('#' + testId).find('span.oi').removeClass('oi-loop-circular').addClass('oi-check text-success');
-        }
-    }
-    
-//    function checkConnection() {
-//        var connected;
-//        $.ajax({
-//            type:"get",
-//            url:"/test/connectivity",
-//            cache: false,
-//            async: false,
-//            success: function(data, textStatus, XMLHttpRequest) {
-//                connected = true;
-//            },
-//            error: function(XMLHttpRequest, textStatus, errorThrown) {
-//                connected = false;
-//            }
-//        });
-//        
-//        return connected;
-//    }
     function makeid() {
       var text = "";
       var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -388,17 +589,7 @@
         text += possible.charAt(Math.floor(Math.random() * possible.length));
 
       return text;
-    }
-   
-    function beginTest() {
-        $('#instructionModal').modal('hide');
-    }
-    
-    function showInstructions() {        
-        
-        $('#instructionModal').modal('show');
-    }
-      
+    }      
 </script>
 <script type="text/javascript">setTimeout(initUI,100);</script>
 

@@ -13,7 +13,7 @@ class DeviceTest extends Model
     protected $fillable = [
         'mac_address',
         'model_id',
-        'tester_name',
+        'username',
     ];
     
     public function deviceModel()
@@ -28,7 +28,7 @@ class DeviceTest extends Model
     
     public function lastInterfaceNumber()
     {
-        $result = $this->results()->orderBy('interface_number', 'DESC')->first();
+        $result = $this->results()->orderBy('interface', 'DESC')->first();
         
         if($result)
             return $result->interface_number;
@@ -41,7 +41,7 @@ class DeviceTest extends Model
         if(!$interfaceNumber = $this->lastInterfaceNumber())
             return false;
         
-        $interface = $this->deviceModel->interfaces()->where('interface_number', $interfaceNumber)->first();
+        $interface = $this->deviceModel->interfaces()->where('index', $interfaceNumber)->first();
         
         return $interface->interface_name;
     }
@@ -73,7 +73,7 @@ class DeviceTest extends Model
         else
             $interfaceNumber = $lastInterfaceNumber + 1;
         
-        $interface = $this->deviceModel->interfaces()->where('interface_number', $interfaceNumber)->first();
+        $interface = $this->deviceModel->interfaces()->where('index', $interfaceNumber)->first();
         
         if($interface) {
             return ['number' => $interfaceNumber, 'name' => $interface->interface_name];
@@ -86,7 +86,7 @@ class DeviceTest extends Model
     {
         $results = DeviceTestResult::select(\DB::raw('*'))
                 ->join('test', 'device_test_result.test_id', '=', 'test.id')
-                ->where('device_test_result.interface_number', $interface)
+                ->where('device_test_result.index', $interface)
                 ->orderBy('order', 'DESC')
                 ->get();
         

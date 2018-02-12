@@ -18,8 +18,8 @@ class AddInitialFkTestResult extends Migration
                     ->references('id')->on('device_test')
                     ->onDelete('cascade');
             
-            $table->foreign('test_id')
-                    ->references('id')->on('test');
+//            $table->foreign('test_name')
+//                    ->references('name')->on('test');
         });
     }
 

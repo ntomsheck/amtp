@@ -15,9 +15,9 @@ class CreateTestTable extends Migration
     {
         Schema::create('test', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('machine_name');
-            $table->string('test_name');
-            $table->string('test_description');
+            $table->char('name', 20);
+            $table->string('description');
+            $table->string('details');
             $table->string('result_type');
             $table->string('minimum_threshold')->default('');
             $table->string('maximum_threshold')->default('');
