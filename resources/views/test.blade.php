@@ -477,7 +477,11 @@
                 testHandler.ajaxRequest(testUrl, "get", {}, 'dns');
             },
             success: function(data) {
-                recordTestResult('dns', {success: true});
+                var response = {
+                    success: true,
+                    hostname: data.hostname,
+                };
+                recordTestResult('dns', response);
             },
             error: function(XMLHttpRequest, textStatus, errorThrown) {
                 recordTestResult('dns', {success: false});
@@ -485,11 +489,11 @@
         },
         throughput: {
             run: function() {
-                return testHandler.throughput.success({"skip" : true});
+                //return testHandler.throughput.success({"skip" : true});
                 var parameters = { //custom test parameters. See doc.md for a complete list
-                    time_dl: 1, //download test lasts 10 seconds
-                    time_ul: 1, //upload test lasts 10 seconds
-                    count_ping: 1 //ping+jitter test does 20 pings
+                    time_dl: 10, //download test lasts 10 seconds
+                    time_ul: 10, //upload test lasts 10 seconds
+                    count_ping: 35 //ping+jitter test does 20 pings
                 };
 
                 w=new Worker('/js/speedtest_worker.js');

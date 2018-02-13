@@ -1,10 +1,10 @@
 <?php
 
-namespace App;
+namespace App\Results;
 
 use Illuminate\Database\Eloquent\Model;
 
-class DeviceTestResult extends Model
+class Throughput extends \App\DeviceTestResult
 {
     protected $table = 'device_test_result';
     

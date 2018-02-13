@@ -35,6 +35,8 @@ Route::any('/test/download', 'TestController@throughputDown');
 
 Route::post('/test/throughput', 'TestController@throughput');
 
+Route::any('/test/results', 'TestController@show');
+
 Route::any('getIP.php', 'TestController@throughputGetIP');
 
 Route::any('empty.php', 'TestController@throughputEmpty');

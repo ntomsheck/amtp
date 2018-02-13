@@ -21,9 +21,14 @@ class DeviceTest extends Model
         return $this->hasOne('App\DeviceModel', 'id', 'model_id');
     }
     
+    public function device()
+    {
+        return $this->hasOne('App\DeviceModel', 'id', 'model_id');
+    }    
+    
     public function results()
     {
-        return $this->hasMany('App\DeviceTestResult', 'device_test_id', 'id');
+        return $this->hasMany('App\TestResult', 'device_test_id', 'id');
     }
     
     public function lastInterfaceNumber()

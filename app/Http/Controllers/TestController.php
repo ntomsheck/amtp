@@ -176,9 +176,7 @@ class TestController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        print_r($request->input('test_results'));
-        
+    {       
         if(!$testId = $this->currentTest($request)) {
             return abort(403);
         }
@@ -187,7 +185,7 @@ class TestController extends Controller
         
         //clean slate
         $test->results()->delete();
-        
+            
         $results = $request->input('test_results')['interfaces'];
         
         foreach($results as $interface => $interfaceTests) {
@@ -209,6 +207,11 @@ class TestController extends Controller
         return response()->json(['success' => true]);   
         
     }
+    
+    public function complete(Request $request)
+    {
+        return redirect('/test');
+    }
 
     /**
      * Display the specified resource.
@@ -216,9 +219,28 @@ class TestController extends Controller
      * @param  \App\DeviceTest  $deviceTest
      * @return \Illuminate\Http\Response
      */
-    public function show(DeviceTest $deviceTest)
+    public function show(Request $request)
     {
-        //
+        if(!$testId = $this->currentTest($request)) {
+            if(!$testId = $request->input('id')) {
+                return abort(403);
+            }
+        } else {
+            
+        }
+        
+        $test = \App\DeviceTest::find($testId);
+        
+        $results = $test->results;
+        
+        $testResults = [];
+        
+        foreach($results as $result) {
+            $testResults[$result->interface][$result->test_name] = json_decode($result->result);
+        }
+        
+        return view('results', ['test' => $test, 'results' => $testResults]);
+        
     }
 
     /**
