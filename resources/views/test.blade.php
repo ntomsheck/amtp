@@ -90,9 +90,6 @@
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title">Next Step</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
       </div>
       <div id="instruction" class="modal-body">
         <p>Please connect to <span class="font-weight-bold" id="if_name">{{ $testCase->nextInterface()['name'] }}</span> and wait 30 seconds.</p>
@@ -126,7 +123,13 @@
     @endforeach
     
     var results = {
-        interfaces: {},
+        interfaces: {
+//            'lan1': {
+//                'connectivity' : {'success': true},
+//                'dns' : {'success' : true},
+//            },
+        },
+        unsavedRecords: 0, //incremental counter
         
     };
     
@@ -147,6 +150,10 @@
             resetAll: function() {
                 $('.test_item span').removeClass().addClass('oi oi-clock');
             },
+            skip: function(test_id) {
+                var divId = '#test_' + test_id + ' span';
+                $(divId).removeClass().addClass('oi oi-warning text-warning');                 
+            },
             inProgress: function(test_id) {
                 var divId = '#test_' + test_id + ' span';
                 $(divId).removeClass().addClass('oi oi-loop-circular text-info');                
@@ -160,6 +167,13 @@
                 $(divId).removeClass().addClass('oi oi-x text-danger');
             }
         },
+        instruct: {
+            interface: function(iface) {
+                var description = interfaces[iface].name;                
+                $('#if_name').text(description);
+                $('#instructionModal').modal('show');                
+            }
+        },
         throughput: {
             resetAll: function() {
                 initUI();
@@ -171,36 +185,41 @@
         }
     };
     
-    var resultHandler = {
-        interfaceIndex: function(obj) 
+    //
+    var progressHandler = {
+        interfacesNotStarted: function(obj)
         {
-            var interfaceCount = Object.keys(obj).length;
-            //index is zero-indexed but .length always starts at 1
-            return --interfaceCount;
+            var initialized = Object.keys(obj);
+            var diff = $(ifList).not(initialized).get();
+            return diff;
         },
-        interfaceName: function(index)
+        interfaceInProgress: function(obj)
         {
-            if(typeof ifList[index] === 'undefined') {
+            var interfaces = Object.keys(obj);
+            if(interfaces.length === 0) {
                 return false;
-            } else {
-                return ifList[index];
             }
-        },
-        testIndex: function(obj, interfaceName)
-        {
-            return Object.keys(obj[interfaceName]).length;
-        },
-        testName: function(index)
-        {
-            if(typeof tests[index] === 'undefined') {
-                return false;
-            } else {
-                return tests[index];
+            
+            for(i = 0; i < interfaces.length; i++) {
+                remaining = progressHandler.testsRemaining(obj, interfaces[i]);
+                if(remaining.length > 0) {
+                    return interfaces[i];
+                }
             }
-        }
-        
+            
+            return false;
+        },
+        testsRemaining: function(obj, interfaceName)
+        {
+            if(typeof obj[interfaceName] === 'undefined') {
+                return tests;
+            }
+            var completed = Object.keys(obj[interfaceName]);
+            var diff = $(tests).not(completed).get();
+            return diff;
+        }        
     };
-    
+        
     function saveResults(obj)
     {
         $.ajax({
@@ -216,129 +235,80 @@
             error: saveResultsError
         });            
     }
-
+    
     function saveResultsSuccess(data)
     {
         console.log(data);
+        results.unsavedRecords = 0;
     }
     
     function saveResultsError(XMLHttpRequest, textStatus, errorThrown) {
         console.log(textStatus);
     }
-
-    //interfaces only appear if tests have been STARTED
-    function currentInterfaceIndex(obj) 
-    {
-        var interfaceCount = Object.keys(obj).length;
-        //index is zero-indexed but .length always starts at 1
-        return --interfaceCount;
-    }
-    
-    //tests only appear if the test has been COMPLETED
-    function nextTestIndex(obj, interfaceName)
-    {
-        return Object.keys(obj[interfaceName]).length;
-    }
-    
-    function interfaceName(index)
-    {
-        if(typeof ifList[index] === 'undefined') {
-            return false;
-        } else {
-            return ifList[index];
-        }        
-    }
-    
-    function testName(index)
-    {
-        if(typeof tests[index] === 'undefined') {
-            return false;
-        } else {
-            return tests[index];
-        }
-    }
-
-    function getTest(obj)
-    {        
-        var ifIndex = currentInterfaceIndex(obj);
-        
-        if(ifIndex < 0) {
-            initializeNextInterface(obj);
-            return false;
-        }
-        
-        var ifName = interfaceName(ifIndex);
-                
-        var testIndex = nextTestIndex(obj, ifName);
-        
-        var testId = testName(testIndex);
-        
-        if(testId === false) { //all tests complete for interface
-            finalizeInterface();
-            initializeNextInterface(obj);
-            return false;
-        }
-                
-        return {interface: ifName, test: testId};
-    }
-    
-    function finalizeInterface()
-    {
-        saveResults(results);
-    }
-    
-    function initializeNextInterface(obj)
-    {
-        var ifIndex = currentInterfaceIndex(obj);
-        ifIndex++;
-        
-        var interface = interfaceName(ifIndex);
-        
-        if(interface === false) {
-            return testsCompleted();
-        }
-        
-        obj[interface] = {};
-        
-        interfaceDescription = interfaces[interface].name;
-        
-        $('#if_name').text(interfaceDescription);
-        $('#instructionModal').modal('show');
-        
-        return true;
-    }
     
     function testsCompleted()
     {
-        alert('all tests completed');
+        if(results.unsavedRecords > 0) {
+            recordsNotSaved();
+        } else {
+            window.location = '/test/complete';
+        }
         return;
     }
     
-    function recordTestResult(test, result)
+    function recordsNotSaved()
     {
-        currentTest = getTest(results.interfaces);
-        
+        $('#instruction p').empty().text('Please reconnect to a working network.');
+        $('#instructionModal').modal('show');
+    }
+    
+    function recordTestResult(iface, test, result)
+    {       
         var uiMethod = ((result.success) ? 'pass' : 'fail');
+        
+        if(result.skipped === true) {
+            uiMethod = 'skip';
+        }
         
         ui.tests[uiMethod](test);
 
-        results.interfaces[currentTest.interface][test] = result;
-        console.log(results);
-        
-        runTest();
+        //failed ajax calls will sometimes try to callback multiple times
+        if(typeof results.interfaces[iface][test] === 'undefined') {
+            results.interfaces[iface][test] = result;
+            results.unsavedRecords++;
+
+            if(results.unsavedRecords >= 5) {
+                saveResults(results);
+            }
+
+            runTest();
+        }
     }
     
     function runTest()
     {
-        var testSet = getTest(results.interfaces);
+        var obj = results.interfaces;
         
-        //this will happen when the next interface has to be set up
-        if(testSet === false) {
-            return false;
+        iface = progressHandler.interfaceInProgress(obj);
+        
+        if(iface === false) { //no 'in progress' interfaces
+            var interfaces = progressHandler.interfacesNotStarted(obj);
+            
+            if(interfaces.length == 0) { //no interfaces left to test
+                return testsCompleted();
+            }
+
+            obj[interfaces[0]] = {};
+
+            ui.instruct.interface(interfaces[0]);
+            
+            return true;
         }
         
-        ui.tests.inProgress(testSet.test);
-        testHandler[testSet.test].run();
+        var remaining = progressHandler.testsRemaining(obj, iface);
+
+        ui.tests.inProgress(remaining[0]);
+        testHandler[remaining[0]].run(iface);
     }
     
     var w=null; //speedtest worker
@@ -427,18 +397,19 @@
      */
     var testHandler = {
         connectivity: {
-            run: function() {
-                testHandler.ajaxRequest("/test/connectivity", "post", {}, 'connectivity');
+            run: function(iface) {
+                testHandler.ajaxRequest("/test/connectivity", "post", {}, 'connectivity', iface);
             },
-            success: function(data) {
-                recordTestResult('connectivity', {success: true});
+            success: function(data, textStatus, jqXHR, iface) {
+                recordTestResult(iface, 'connectivity', {success: true});
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                recordTestResult('connectivity', {success: false});
+            error: function(XMLHttpRequest, textStatus, errorThrown, iface) {
+                recordTestResult(iface, 'connectivity', {success: false});
+                recordTestResult(iface, 'throughput', {success: false, skipped: true});
             }
         },
         dhcp: {
-            run: function() {
+            run: function(iface) {
                 window.RTCPeerConnection = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;//compatibility for Firefox and chrome
                 var pc = new RTCPeerConnection({iceServers:[]}), noop = function(){};      
                 pc.createDataChannel('');//create a bogus data channel
@@ -447,48 +418,48 @@
                 {
                     if (ice && ice.candidate && ice.candidate.candidate){
                         var ipAddress = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(ice.candidate.candidate)[1]; 
-                        testHandler.dhcp.success({ip: ipAddress});
+                        testHandler.dhcp.success({ip: ipAddress}, null, null, iface);
                         pc.onicecandidate = noop;
                     }
                 };
             },
-            success: function(data) {
-                recordTestResult('dhcp', {success: true, ip: data.ip});
+            success: function(data, textStatus, jqXHR, iface) {
+                recordTestResult(iface, 'dhcp', {success: true, ip: data.ip});
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
+            error: function(XMLHttpRequest, textStatus, errorThrown, iface) {
                 //not currently called
             }
              
         },
         routing: {
-            run: function() {
-                testHandler.ajaxRequest("https://httpbin.org/get", "get", {}, 'routing');
+            run: function(iface) {
+                testHandler.ajaxRequest("https://httpbin.org/get", "get", {}, 'routing', iface);
             },
-            success: function(data) {
-                recordTestResult('routing', {success: true});
+            success: function(data, textStatus, jqXHR, iface) {
+                recordTestResult(iface, 'routing', {success: true});
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                recordTestResult('routing', {success: false});
+            error: function(XMLHttpRequest, textStatus, errorThrown, iface) {
+                recordTestResult(iface, 'routing', {success: false});
             }
         },
         dns: {
-            run: function() {
+            run: function(iface) {
                 testUrl = 'http://' + makeid() + '.' + wildcardSuffix;
-                testHandler.ajaxRequest(testUrl, "get", {}, 'dns');
+                testHandler.ajaxRequest(testUrl, "get", {}, 'dns', iface);
             },
-            success: function(data) {
+            success: function(data, textStatus, jqXHR, iface) {
                 var response = {
                     success: true,
                     hostname: data.hostname,
                 };
-                recordTestResult('dns', response);
+                recordTestResult(iface, 'dns', response);
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                recordTestResult('dns', {success: false});
+            error: function(XMLHttpRequest, textStatus, errorThrown, iface) {
+                recordTestResult(iface, 'dns', {success: false});
             }
         },
         throughput: {
-            run: function() {
+            run: function(iface) {
                 //return testHandler.throughput.success({"skip" : true});
                 var parameters = { //custom test parameters. See doc.md for a complete list
                     time_dl: 10, //download test lasts 10 seconds
@@ -513,18 +484,18 @@
                             upload_duration: parameters.time_ul,
                             ping_count: parameters.count_ping
                         };
-                        testHandler.throughput.success(resultData);
+                        testHandler.throughput.success(resultData, null, null, iface);
                         w=null;
                         updateUI(true);
                     }
                 };
             },
-            success: function(data) {
+            success: function(data, textStatus, jqXHR, iface) {
                 data.success = true;            
-                recordTestResult('throughput', data);
+                recordTestResult(iface, 'throughput', data);
             },
-            error: function(XMLHttpRequest, textStatus, errorThrown) {
-                recordTestResult('throughput', {success: false});
+            error: function(XMLHttpRequest, textStatus, errorThrown, iface) {
+                recordTestResult(iface, 'throughput', {success: false});
             }
         },
         cancel: function() {
@@ -549,7 +520,7 @@
                 }
             });             
         },
-        ajaxRequest: function(requestUrl, requestType, requestData, testBranch)
+        ajaxRequest: function(requestUrl, requestType, requestData, testBranch, interface)
         {
             $.ajax({
                 type: requestType,
@@ -558,10 +529,15 @@
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 cache: false,
+                async: true,  
                 data: requestData,
                 dataType: "json",
-                success: testHandler[testBranch].success,
-                error: testHandler[testBranch].error
+                success: function(data, textStatus, jqXHR) {
+                    testHandler[testBranch].success(data, textStatus, jqXHR, interface);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    testHandler[testBranch].error(jqXHR, textStatus, errorThrown, interface);
+                }
             });
         }
         

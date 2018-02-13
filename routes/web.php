@@ -23,23 +23,24 @@ Route::any('/test/save', 'TestController@store');
 
 Route::any('/test/connectivity', 'TestController@connectivity');
 
-Route::post('/test/dhcp', 'TestController@dhcp');
-
-Route::post('/test/dns', 'TestController@dns');
-
 Route::any('/test/checkDns', 'TestController@checkDns');
 
 Route::post('/test/routing', 'TestController@routing');
 
 Route::any('/test/download', 'TestController@throughputDown');
 
-Route::post('/test/throughput', 'TestController@throughput');
-
-Route::any('/test/results', 'TestController@show');
-
 Route::any('getIP.php', 'TestController@throughputGetIP');
 
 Route::any('empty.php', 'TestController@throughputEmpty');
+
+Route::any('/test/complete', 'TestController@complete');
+
+Route::any('/test/results', [
+    'as' => 'test.results',
+    'uses' => 'TestController@show'
+]);
+
+
 
 Auth::routes();
 

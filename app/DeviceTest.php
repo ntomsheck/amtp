@@ -31,6 +31,23 @@ class DeviceTest extends Model
         return $this->hasMany('App\TestResult', 'device_test_id', 'id');
     }
     
+    /**
+     * A very basic way to check if the tests are complete.  Number of results
+     * must be equal to number of interfaces * number of tests
+     * 
+     * return bool
+     */
+    public function isComplete()
+    {
+        $interfaceCount = $this->device->interfaces()->count(); //get number of interfaces
+        
+        $testCount = \App\Test::count(); //get number of tests
+        
+        $expectedResultCount = $testCount * $interfaceCount;
+        
+        return ($expectedResultCount == $this->results()->count());
+    }
+    
     public function lastInterfaceNumber()
     {
         $result = $this->results()->orderBy('interface', 'DESC')->first();
@@ -89,7 +106,7 @@ class DeviceTest extends Model
     
     public function getTestsForInterface($interface)
     {
-        $results = DeviceTestResult::select(\DB::raw('*'))
+        $results = TestResult::select(\DB::raw('*'))
                 ->join('test', 'device_test_result.test_id', '=', 'test.id')
                 ->where('device_test_result.index', $interface)
                 ->orderBy('order', 'DESC')

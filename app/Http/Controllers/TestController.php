@@ -74,6 +74,7 @@ class TestController extends Controller
     
     public function connectivity(Request $request)
     {
+        //return abort(500);
         return response()->json(['success' => true]);
     }
        
@@ -191,7 +192,7 @@ class TestController extends Controller
         foreach($results as $interface => $interfaceTests) {
             foreach($interfaceTests as $test => $testResults){
                 
-                $result = new \App\DeviceTestResult();
+                $result = new \App\TestResult();
                 $result->device_test_id = $testId;
                 $result->interface = $interface;
                 $result->test_name = $test;
@@ -210,7 +211,23 @@ class TestController extends Controller
     
     public function complete(Request $request)
     {
-        return redirect('/test');
+        if(!$testId = $this->currentTest($request)) {
+            return abort(403);
+        }
+        
+        $test = \App\DeviceTest::find($testId);
+
+        //prevents people from accessing this page prematurely
+        if(!$test->isComplete()) {
+            redirect('/test');
+        }
+        //update the timestamp in the database
+        $test->save();
+        
+        //flush the test so they can start another after viewing results
+        $request->session()->flush();
+        
+        return redirect()->route('test.results', ['id' => $testId]);
     }
 
     /**
